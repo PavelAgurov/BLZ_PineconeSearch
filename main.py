@@ -21,7 +21,7 @@ PINECONE_INDEX_NAME = 'bv-index-1536'
 how_it_work = """\
 Ask your question in your language. 
 Gpt will extract your question in German, search in BLZ index and return result in your original language as Gpt-summary of articles.
-Please note - not all articles can be relevant, it's only similarity search.
+Please note - not all articles can be relevant, it's only similarity search (first score). Second score is defined by Gpt.
 """
 
 question_prompt_template = """/
@@ -38,6 +38,7 @@ You are the best linguist who can compare texts.
 You should understand if provided texts are relevant to the provided question.
 Relevance score is a number from 0 till 1. 0 means "not relevant", 1 means "relevant".
 Provide answer as list in JSON format with fields:
+- text_name - name of text
 - explanation - explanation why text is relevant to the question
 - score - score how text is relevant to the question
 Answer should be in English.
@@ -101,6 +102,9 @@ def load_llm():
 
 def get_question():
     return question_container.text_input("Your question: ", "", key="input")
+
+def get_counter():
+    return question_container.number_input("Count of examples: ", min_value=1, max_value=6, value=3, key="example_counter")
     
 #@st.cache_resource
 def create_question_chain(_llm):
@@ -139,7 +143,8 @@ relevant_chain    = create_relevant_chain(llm)
 summary_chain     = create_summary_chain(llm)
 translation_chain = create_translation_chain(llm)
 
-user_input = get_question()
+user_input     = get_question()
+count_examples = get_counter()
 
 if user_input:
     
@@ -149,7 +154,7 @@ if user_input:
     de_question   = extracted_question_json['question']
     details_container.markdown(f'[Was in {original_lang}] {de_question}', unsafe_allow_html=True)
 
-    docs = chain.similarity_search_with_score(de_question, k = 3)
+    docs = chain.similarity_search_with_score(de_question, k = count_examples)
 
     content_list = []
     text_index = 1
@@ -157,7 +162,7 @@ if user_input:
         d = docs[i]
         content = d[0].page_content
         content_list.append(f'Text-{text_index}:\n{content}')
-        text_index = text_index +1
+        text_index = text_index+1
 
     texts = '\n'.join(content_list)
 
@@ -173,12 +178,13 @@ if user_input:
         text_index = 1
         for i in range(len(docs)):
             d = docs[i]
-            content = textwrap.fill(d[0].page_content, 100)
-            doc_ref = os.path.basename(d[0].metadata['source'])
-            score   = result_relevant_json[i]["score"]
+            content   = textwrap.fill(d[0].page_content, 100)
+            doc_ref   = os.path.basename(d[0].metadata['source'])
+            score     = result_relevant_json[i]["score"]
+            sim_score = d[1]
             explanation = result_relevant_json[i]["explanation"].replace(f'Text-{text_index}', 'This text')
             
-            details_container.markdown(f'<b>{doc_ref}</b> [score={score}]:', unsafe_allow_html=True)
+            details_container.markdown(f'<b>{doc_ref}</b> [score={sim_score:1.2f}/{score:1.2f}]:', unsafe_allow_html=True)
             details_container.markdown(content, unsafe_allow_html=False)
             details_container.markdown(f'<i>{explanation}</i>', unsafe_allow_html=True)
             
