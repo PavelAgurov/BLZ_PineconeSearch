@@ -22,8 +22,6 @@ question_container = st.container()
 details_container  = st.container()
 output_container   = st.container()
 
-details_container.markdown(f'a={len(OPENAI_API_KEY)}  p={len(PINECONE_API_KEY)}', unsafe_allow_html=True)
-
 @st.cache_resource
 def create_embeddings():
     embeddings = OpenAIEmbeddings()
