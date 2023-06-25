@@ -176,7 +176,7 @@ if user_input:
             content = textwrap.fill(d[0].page_content, 100)
             doc_ref = os.path.basename(d[0].metadata['source'])
             score   = result_relevant_json[i]["score"]
-            explanation = result_relevant_json[i]["explanation"].replace(f'Text-{i}', 'This text')
+            explanation = result_relevant_json[i]["explanation"].replace(f'Text-{text_index}', 'This text')
             
             details_container.markdown(f'<b>{doc_ref}</b> [score={score}]:', unsafe_allow_html=True)
             details_container.markdown(content, unsafe_allow_html=False)
