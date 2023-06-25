@@ -28,9 +28,10 @@ Please note - not all articles can be relevant, it's only similarity search (fir
 question_prompt_template = """/
 You are the best German translator.
 You should translate remove all not significant words from provided question and translate it to German.
-You should provide result in JSON format with fields: 
+You should provide result in JSON format with fields:
 - lang (language of original question)
 - question (extracted and translated question)
+Be sure that result is real JSON.
 Question: {question}
 """
 
@@ -146,69 +147,75 @@ count_examples = get_counter()
 if user_input:
     
     extracted_question = extract_question(question_chain, user_input)
-    extracted_question_json = json.loads(extracted_question)
-    original_lang = extracted_question_json['lang']
-    de_question   = extracted_question_json['question']
-    details_container.markdown(f'[Was in {original_lang}] {de_question}', unsafe_allow_html=True)
-
-    docs = chain.similarity_search_with_score(de_question, k = count_examples)
-
-    content_list = []
-    text_index = 1
-    for i in range(len(docs)):
-        d = docs[i]
-        content = d[0].page_content
-        content_list.append(f'Text-{text_index}:\n{content}')
-        text_index = text_index+1
-
-    texts = '\n'.join(content_list)
-
-    result_relevant = relevant_chain.run(
-      question = de_question,
-      texts = texts
-    )
-
+   
     try:
-        result_relevant_json = json.loads(result_relevant)
-        
+        extracted_question_json = json.loads(extracted_question)
+        original_lang = extracted_question_json['lang']
+        de_question   = extracted_question_json['question']
+        details_container.markdown(f'[Was in {original_lang}] {de_question}', unsafe_allow_html=True)
+
+        docs = chain.similarity_search_with_score(de_question, k = count_examples)
+
         content_list = []
         text_index = 1
         for i in range(len(docs)):
             d = docs[i]
-            content   = textwrap.fill(d[0].page_content, 100)
-            doc_ref   = os.path.basename(d[0].metadata['source'])
-            score     = result_relevant_json[i]["score"]
-            sim_score = d[1]
-            explanation = result_relevant_json[i]["explanation"].replace(f'Text-{text_index}', 'This text')
-            
-            details_container.markdown(f'<b>{doc_ref}</b> [score={sim_score:1.2f}/{score:1.2f}]:', unsafe_allow_html=True)
-            details_container.markdown(content, unsafe_allow_html=False)
-            details_container.markdown(f'<i>{explanation}</i>', unsafe_allow_html=True)
-            
-            if score >= 0.5:
-                content_list.append(f'Text-{text_index}:\n{content}')
-                text_index = text_index + 1
+            content = d[0].page_content
+            content_list.append(f'Text-{text_index}:\n{content}')
+            text_index = text_index+1
 
-        if len(content_list) == 0:
-            output_container.markdown('>There is no answer', unsafe_allow_html=True)
-        else:
-            texts = '\n'.join(content_list)
+        texts = '\n'.join(content_list)
+
+        result_relevant = relevant_chain.run(
+          question = de_question,
+          texts = texts
+        )
+
+        try:
+            result_relevant_json = json.loads(result_relevant)
             
-            result_summary = summary_chain.run(
-              question = de_question,
-              texts = texts
-            )
-            
-            if original_lang != 'German':
-                result_summary = translation_chain.run(
-                  lang = original_lang,
-                  text = result_summary
+            content_list = []
+            text_index = 1
+            for i in range(len(docs)):
+                d = docs[i]
+                content   = textwrap.fill(d[0].page_content, 100)
+                doc_ref   = os.path.basename(d[0].metadata['source'])
+                score     = result_relevant_json[i]["score"]
+                sim_score = d[1]
+                explanation = result_relevant_json[i]["explanation"].replace(f'Text-{text_index}', 'This text')
+                
+                details_container.markdown(f'<b>{doc_ref}</b> [score={sim_score:1.2f}/{score:1.2f}]:', unsafe_allow_html=True)
+                details_container.markdown(content, unsafe_allow_html=False)
+                details_container.markdown(f'<i>{explanation}</i>', unsafe_allow_html=True)
+                
+                if score >= 0.5:
+                    content_list.append(f'Text-{text_index}:\n{content}')
+                    text_index = text_index + 1
+
+            if len(content_list) == 0:
+                output_container.markdown('>There is no answer', unsafe_allow_html=True)
+            else:
+                texts = '\n'.join(content_list)
+                
+                result_summary = summary_chain.run(
+                  question = de_question,
+                  texts = texts
                 )
-        
-            output_container.markdown(f'>{result_summary}', unsafe_allow_html=True)
-        
+                
+                if original_lang != 'German':
+                    result_summary = translation_chain.run(
+                      lang = original_lang,
+                      text = result_summary
+                    )
+            
+                output_container.markdown(f'>{result_summary}', unsafe_allow_html=True)
+                
+        except Exception as error:
+            output_container.markdown(f'>[ERROR]\n{result_relevant}. \nError: {error}\n{traceback.format_exc()}', unsafe_allow_html=True)
+                
     except Exception as error:
-        output_container.markdown(f'>[ERROR]\n{result_relevant}. \nError: {error}\n{traceback.format_exc()}', unsafe_allow_html=True)
+        output_container.markdown(f'Looks like it\'s not a question.\nError JSON: {extracted_question}', unsafe_allow_html=True)
+        
 
         
     
