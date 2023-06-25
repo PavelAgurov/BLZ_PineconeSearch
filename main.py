@@ -185,7 +185,7 @@ if user_input:
             details_container.markdown(content, unsafe_allow_html=False)
             details_container.markdown(f'<i>{explanation}</i>', unsafe_allow_html=True)
             
-            if score > 0.5:
+            if score >= 0.5:
                 content_list.append(f'Text-{text_index}:\n{content}')
                 text_index = text_index + 1
 
