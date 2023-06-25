@@ -9,8 +9,8 @@ import json
 import os
 import textwrap
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"] 
+PINECONE_API_KEY = os.environ["PINECONE_API_KEY"]
 
 PINECONE_ENV = 'us-west1-gcp-free'
 PINECONE_INDEX_NAME = 'bv-index-1536'
