@@ -24,6 +24,7 @@ You are SEO manager. Please generate the best title for provided article and exp
 Provide result in JSON format with fields: title and list of explanations. 
 Title should be in the same language as original text.
 Explanations should be in English.
+Be sure that result is valid JSON.
 ###
 Text:
 {text}
@@ -65,6 +66,9 @@ user_input = get_text()
 if user_input:
     
     result = seo_chain.run(text=user_input)
+
+    #title_container.markdown(f"Title:<br/><b>{result}</b>", unsafe_allow_html=True)
+
     result_json = json.loads(result)
     
     title_container.markdown(f"Title:<br/><b>{result_json['title']}</b>", unsafe_allow_html=True)
