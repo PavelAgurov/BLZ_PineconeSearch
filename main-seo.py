@@ -15,7 +15,8 @@ import traceback
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"] 
 
 how_it_work = """\
-Put your text here and generate the best title for SEO. 
+Put your text here and generate the best title for SEO.
+Press Ctrl+Enter and wait for Gpt advice. 
 """
 
 seo_prompt_template = """/
