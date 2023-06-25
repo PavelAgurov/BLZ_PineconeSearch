@@ -11,6 +11,7 @@ from langchain.chains import LLMChain
 import json
 import os
 import textwrap
+import traceback
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"] 
 PINECONE_API_KEY = os.environ["PINECONE_API_KEY"]
@@ -37,11 +38,11 @@ relevant_prompt_template = """/
 You are the best linguist who can compare texts.
 You should understand if provided texts are relevant to the provided question.
 Relevance score is a number from 0 till 1. 0 means "not relevant", 1 means "relevant".
-Provide answer as list in JSON format with fields:
+###
+Provide result as array in JSON format with fields:
 - text_name - name of text
-- explanation - explanation why text is relevant to the question
+- explanation - explanation in English why text is relevant to the question
 - score - score how text is relevant to the question
-Answer should be in English.
 ###
 Question: {question}
 {texts}
@@ -106,25 +107,21 @@ def get_question():
 def get_counter():
     return question_container.number_input("Count of examples: ", min_value=1, max_value=6, value=3, key="example_counter")
     
-#@st.cache_resource
 def create_question_chain(_llm):
     prompt = PromptTemplate.from_template(question_prompt_template)
     chain  = LLMChain(llm=_llm, prompt = prompt)
     return chain
 
-#@st.cache_resource
 def create_relevant_chain(_llm):
     prompt = PromptTemplate.from_template(relevant_prompt_template)
     chain  = LLMChain(llm=_llm, prompt= prompt)
     return chain
 
-#@st.cache_resource
 def create_summary_chain(_llm):
     prompt = PromptTemplate.from_template(summary_prompt_template)
     chain = LLMChain(llm=_llm, prompt= prompt)
     return chain
 
-#@st.cache_resource
 def create_translation_chain(_llm):
     prompt = PromptTemplate.from_template(translation_prompt_template)
     chain = LLMChain(llm=_llm, prompt= prompt)
@@ -211,7 +208,7 @@ if user_input:
             output_container.markdown(f'>{result_summary}', unsafe_allow_html=True)
         
     except Exception as error:
-        output_container.markdown(f'>[ERROR]\n{result_relevant}. \nError: {error}', unsafe_allow_html=True)
+        output_container.markdown(f'>[ERROR]\n{result_relevant}. \nError: {error}\n{traceback.format_exc()}', unsafe_allow_html=True)
 
         
     
