@@ -22,13 +22,15 @@ Press Ctrl+Enter and wait for Gpt advice.
 seo_prompt_template = """/
 You are SEO manager. Please generate the best title for provided article and explain why it's the best. 
 Provide result in JSON format with fields: title and list of explanations. 
-Title should be in the same language as original text.
-Explanations should be in English.
+Title and explanations should be in the same language as original text.
 Be sure that result is valid JSON.
 ###
 Text:
 {text}
 """
+
+#Explanations should be in English.
+
 
 st.set_page_config(page_title="BLZ SEO Demo", page_icon=":robot:")
 st.title('BLZ SEO Demo')
