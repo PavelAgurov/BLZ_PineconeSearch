@@ -95,12 +95,17 @@ if user_input:
         explanation = result_json["explanation"]
         
         if len(explanation) > 0:
-            e_rus = []
-            for e in explanation:
-                result_rus = rus_chain.run(text=e)
-                e_rus.append(f'<li>{result_rus}</li>')
-            full_explain_rus = "\n".join(e_rus)
-            explain_container.markdown(full_explain_rus, unsafe_allow_html=True)
+            if isinstance(explanation, str):
+                result_rus = rus_chain.run(text=explanation)
+                result_rus = f'<li>{result_rus}</li>'
+                explain_container.markdown(result_rus, unsafe_allow_html=True)
+            else:
+                e_rus = []
+                for e in explanation:
+                    result_rus = rus_chain.run(text=e)
+                    e_rus.append(f'<li>{result_rus}</li>')
+                full_explain_rus = "\n".join(e_rus)
+                explain_container.markdown(full_explain_rus, unsafe_allow_html=True)
         else:
             explain_container.markdown("Предложение верное", unsafe_allow_html=True)
     except Exception as error:
