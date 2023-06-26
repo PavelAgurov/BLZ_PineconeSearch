@@ -22,7 +22,7 @@ Press Ctrl+Enter and wait for Gpt advice.
 check_prompt_template = """/
 You are German techer. 
 I want to check my German. 
-I will write sentences - please correct me and explain why it's wrong.
+I will write sentences - please correct me if I'm wrong and explain why step by step.
 Explanation should be in Russian.
 ###
 Text:
