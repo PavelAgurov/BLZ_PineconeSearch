@@ -26,7 +26,8 @@ I will write one sentence - please correct me if I'm wrong.
 If there are errors please explain me step by step why and what is wrong.
 Provide answer in JSON format with fields:
 - correct - correct sentence in German
-- explaination - list of explaination
+- explaination - list of explaination if needed
+Be sure that result is valid JSON.
 ###
 Text:
 {text}
@@ -83,15 +84,24 @@ user_input = get_text()
 if user_input:
     
     result = check_chain.run(text=user_input)
-    result_json = json.loads(result)
-    
-    correct = result_json["correct"]
-    diff = Redlines(user_input, correct) 
-    correct_container.markdown(diff.output_markdown, unsafe_allow_html=True)
-    
-    e_rus = []
-    for e in result_json["explanation"]:
-        result_rus = rus_chain.run(text=e)
-        e_rus.append(f'<li>{result_rus}</li>')
-    full_explain_rus = "\n".join(e_rus)
-    explain_container.markdown(full_explain_rus, unsafe_allow_html=True)
+
+    try:
+        result_json = json.loads(result)
+        
+        correct = result_json["correct"]
+        diff = Redlines(user_input, correct) 
+        correct_container.markdown(diff.output_markdown, unsafe_allow_html=True)
+        
+        explanation = result_json["explanation"]
+        
+        if len(explanation) > 0:
+            e_rus = []
+            for e in explanation:
+                result_rus = rus_chain.run(text=e)
+                e_rus.append(f'<li>{result_rus}</li>')
+            full_explain_rus = "\n".join(e_rus)
+            explain_container.markdown(full_explain_rus, unsafe_allow_html=True)
+        else:
+            explain_container.markdown("Предложение верное", unsafe_allow_html=True)
+    except Exception as error:
+        explain_container.markdown(f'Error JSON: [{result}]', unsafe_allow_html=True)
