@@ -31,7 +31,7 @@ Text:
 
 
 st.set_page_config(page_title="Gpt German Gramma Checker", page_icon=":robot:")
-st.title('DE Checker')
+st.title('Gpt German Gramma Checker')
 
 header_container   = st.container()
 text_container     = st.container()
