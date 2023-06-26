@@ -21,8 +21,8 @@ Press Ctrl+Enter and wait for Gpt advice.
 
 check_prompt_template = """/
 You are German techer. 
-You should check if provided text is grammatically correct.
-If it's not grammatically correct - explain why step by step.
+I want to check my German. 
+I will write sentences - please correct me and explain why it's wrong.
 Explanation should be in Russian.
 ###
 Text:
