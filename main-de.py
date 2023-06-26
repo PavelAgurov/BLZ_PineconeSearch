@@ -11,6 +11,7 @@ import json
 import os
 import textwrap
 import traceback
+from redlines import Redlines  
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"] 
 
@@ -20,10 +21,20 @@ Press Ctrl+Enter and wait for Gpt advice.
 """
 
 check_prompt_template = """/
-You are German techer. 
-I want to check my German. 
-I will write sentences - please correct me if I'm wrong and explain why step by step.
-Explanation should be in Russian.
+Hi, I want to check my German. 
+I will write one sentence - please correct me if I'm wrong.
+If there are errors please explain me step by step why and what is wrong.
+Provide answer in JSON format with fields:
+- correct - correct sentence in German
+- explaination - list of explaination
+###
+Text:
+{text}
+"""
+
+rus_prompt_template = """/
+You are the best translator from English to Russuan.
+Please translate provided text into Russuan.
 ###
 Text:
 {text}
@@ -35,6 +46,7 @@ st.title('Gpt German Gramma Checker')
 
 header_container   = st.container()
 text_container     = st.container()
+correct_container  = st.container()
 explain_container  = st.container()
 
 header_container.markdown(how_it_work, unsafe_allow_html=True)
@@ -52,17 +64,34 @@ def load_llm():
 def get_text():
     return text_container.text_area("Text: ", key="input")
 
-def create_chain(_llm):
+def create_check_chain(_llm):
     prompt = PromptTemplate.from_template(check_prompt_template)
+    chain  = LLMChain(llm=_llm, prompt = prompt)
+    return chain
+
+def create_rus_chain(_llm):
+    prompt = PromptTemplate.from_template(rus_prompt_template)
     chain  = LLMChain(llm=_llm, prompt = prompt)
     return chain
     
 llm = load_llm()
-check_chain = create_chain(llm)
+check_chain = create_check_chain(llm)
+rus_chain   = create_rus_chain(llm)
 
 user_input = get_text()
 
 if user_input:
     
     result = check_chain.run(text=user_input)
-    explain_container.markdown(result, unsafe_allow_html=True)
+    result_json = json.loads(result)
+    
+    correct = result_json["correct"]
+    diff = Redlines(user_input, correct) 
+    correct_container.markdown(diff.output_markdown, unsafe_allow_html=True)
+    
+    e_rus = []
+    for e in result_json["explanation"]:
+        result_rus = rus_chain.run(text=e)
+        e_rus.append(f'<li>{result_rus}</li>')
+    full_explain_rus = "\n".join(e_rus)
+    explain_container.markdown(full_explain_rus, unsafe_allow_html=True)
