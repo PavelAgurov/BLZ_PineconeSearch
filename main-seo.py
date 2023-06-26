@@ -22,7 +22,7 @@ Press Ctrl+Enter and wait for Gpt advice.
 seo_prompt_template = """/
 You are SEO manager. Please generate the best title for provided article and explain why it's the best. 
 Provide result in JSON format with fields: title and list of explanations. 
-Title and explanations should be in the same language as original text.
+Title and explanations should be in German.
 Be sure that result is valid JSON.
 ###
 Text:
