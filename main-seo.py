@@ -20,9 +20,12 @@ Press Ctrl+Enter and wait for Gpt advice.
 """
 
 seo_prompt_template = """/
-You are SEO manager. Please generate the best title for provided article and explain why it's the best. 
+You are SEO manager. 
+Please generate the best title for provided article for publishing in {channel} and 
+explain step by step why it's the best for concrete this channel from SEO point of view.
 Provide result in JSON format with fields: title and list of explanations. 
 Title and explanations should be in German.
+Before answer check that you follow recommendation that you did.
 Be sure that result is valid JSON.
 ###
 Text:
@@ -47,13 +50,10 @@ def load_llm():
     llm = ChatOpenAI(
         openai_api_key= OPENAI_API_KEY,
         model_name  = "gpt-3.5-turbo", 
-        temperature = 0, 
+        temperature = 0.5, 
         max_tokens  = 500
     )
     return llm
-
-def get_text():
-    return text_container.text_area("Article text: ", key="input")
 
 def create_seo_chain(_llm):
     prompt = PromptTemplate.from_template(seo_prompt_template)
@@ -63,24 +63,28 @@ def create_seo_chain(_llm):
 llm = load_llm()
 seo_chain = create_seo_chain(llm)
 
-user_input = get_text()
+# ---------- UI
+user_input = text_container.text_area("Article text: ", key="input")
+channel    = text_container.selectbox('Channel:', ('Web', 'Facebook', 'Twitter'))
 
+# ---------- Processing
 if user_input:
     
-    result = seo_chain.run(text=user_input)
+    result = seo_chain.run(text= user_input, channel = channel)
 
-    #title_container.markdown(f"Title:<br/><b>{result}</b>", unsafe_allow_html=True)
-
-    result_json = json.loads(result)
+    try:
+        result_json = json.loads(result)
+        
+        title_container.markdown(f"Title:<br/><b>{result_json['title']}</b>", unsafe_allow_html=True)
+            
+        list_li = []
+        for e in result_json['explanations']:
+            list_li.append(f'<li>{e}')
+        explain_result = '\n'.join(list_li)
+        explain_container.markdown(explain_result, unsafe_allow_html=True)
     
-    title_container.markdown(f"Title:<br/><b>{result_json['title']}</b>", unsafe_allow_html=True)
-    
-    list_li = []
-    for e in result_json['explanations']:
-        list_li.append(f'<li>{e}')
-    explain_result = '\n'.join(list_li)
-    explain_container.markdown(explain_result, unsafe_allow_html=True)
-    
+    except Exception as error:
+        explain_container.markdown(f'Error JSON: [{result}]', unsafe_allow_html=True)
 
         
 
