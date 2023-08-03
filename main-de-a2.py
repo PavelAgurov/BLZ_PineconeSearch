@@ -47,8 +47,8 @@ Provide answer in JSON format:
 {{
     "correct" : "correct sentence in {lang}",
     "errors_explanations":[
-        ["wrong word in {lang}", "russian detailed explanation of this mistake"],
-        ["wrong word in {lang}", "russian detailed explanation of this mistake"]
+        ["wrong word in {lang}", "detailed explanation of this mistake", "the same explanation translated into Russian"],
+        ["wrong word in {lang}", "detailed explanation of this mistake", "the same explanation translated into Russian"]
     ]
 
 }}
@@ -215,7 +215,7 @@ if correct and saved_user_input:
     correct_container.markdown(diff.output_markdown, unsafe_allow_html=True)
 
     if len(explanation) > 0:
-        result_rus = '\n'.join([f'<li>{e[1]}</li>' for e in explanation])
+        result_rus = '\n'.join([f'<li>{e[2]}</li>' for e in explanation])
         explain_container.markdown(result_rus, unsafe_allow_html=True)
     else:
         explain_container.markdown("Предложение верное", unsafe_allow_html=True)
