@@ -21,14 +21,15 @@ Enter your translation of proposed text, click Check and wait for Gpt validation
 generation_template = """/
 Hello! I am learning {lang}. My level is {level}.
 Make me a complicated enough for my level a sentence in Russian for translation into {lang} and translate all the words in it, 
-but not the sentence itself.
+but not the sentence itself. 
+All nouns must have an article (for example "der Ort", "das Essen").
 Use this {random} value for seed randomization and generate different sentences.
 Provide answer in JSON format:
 {{
     "russian_sentence" : "proposed sentence in Russian",
     "words":[
-        ["word": "word in infinitive form", "translation" : "translation into {lang}"}},
-        ["word": "word in infinitive form", "translation" : "translation into {lang}"}}
+        ["word": "word in infinitive and singular form", "translation" : "translation into {lang} with article if it's required"}},
+        ["word": "word in infinitive and singular form", "translation" : "translation into {lang} with article if it's required"}}
     ]
 
 }}
