@@ -135,6 +135,14 @@ def on_next_button_click():
     st.session_state[SESSION_SAVED_WORDS_DF] = None
     st.session_state.user_input = ""
 
+query_params = st.experimental_get_query_params()
+from_lang_default_value = "Russian"
+if "from" in query_params:
+    from_lang_default_value = query_params["from"][0].strip("\"")
+to_lang_default_value = "German"
+if "to" in query_params:
+    to_lang_default_value = query_params["to"][0].strip("\"")
+
 header_container   = st.container()
 
 tab_main, tab_debug = st.tabs(["Main", "Debug"])
@@ -158,8 +166,8 @@ with tab_debug:
     validate_json_container = st.expander(label="JSON validation")
 
 with st.sidebar:
-    lang_my_input   = st.text_input("I speak: ",  value = "Russian")
-    lang_learn_input = st.text_input("I learn: ", value = "German")
+    lang_my_input   = st.text_input("I speak: ",  value = from_lang_default_value)
+    lang_learn_input = st.text_input("I learn: ", value = to_lang_default_value)
     level_intput    = st.selectbox("Level:", key="level", options=["A1", "A2", "B1", "B2", "B2+"], index=1)
     words_container = st.expander(label="Help me with words")
     error_container = st.empty()
