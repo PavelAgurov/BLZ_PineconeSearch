@@ -8,6 +8,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.cache import SQLiteCache
 import json
 import os
+import re
 from redlines import Redlines  
 import datetime
 from utils import streamlit_hack_disable_textarea_submit, streamlit_hack_remove_top_space
@@ -73,20 +74,19 @@ Provide answer in JSON format:
 
 check_prompt_template = """/
 Hi, I want to check my {lang_learn}.
-I have translation of {lang_my} sentence (separated by XML tags) into {lang_learn} (separated by XML tags).
-Please correct me if my translation is wrong and if there are errors please explain me step by step why and what is wrong.
-Please provide as much detail as possible about the mistakes according to the {lang_learn} grammar, but only really relevant to the mistakes made.
+I have translation sentence (separated by XML tags) from {lang_my} into {lang_learn} (separated by XML tags).
+Please correct me if my translation is wrong and if there are errors please explain me step by step all my mistakes.
 Do not check original sentence, only check my translation.
+Don't try to make up an errors, only provide me information about my mistakes in this sentence.
 All explanations should be provided in {lang_my}.
 
 Provide answer in JSON format:
 {{
     "correct" : "correct sentence in {lang_learn}",
     "errors_explanations":[
-        ["wrong word in {lang_learn}", "detailed explanation of this mistake", "the same explanation translated into {lang_my}"],
-        ["wrong word in {lang_learn}", "detailed explanation of this mistake", "the same explanation translated into {lang_my}"]
+        "my mistakes explanation",
+        "the same explanation translated into {lang_my}"
     ]
-
 }}
 Be sure that result is valid JSON.
 
@@ -206,6 +206,9 @@ def get_fixed_json(text : str) -> str:
         return text
     return text[open_bracket:close_bracket+1]
 
+def remove_double_spaces(input):
+    return re.sub(' +', ' ', input)
+
 if not gpt_key_input:
     st.stop()
 
@@ -281,7 +284,7 @@ if saved_user_input and run_check:
     try:
         result_json = json.loads(get_fixed_json(validation_result))
         
-        correct : str = result_json["correct"].strip()
+        correct : str = remove_double_spaces(result_json["correct"]).strip()
         explanation = result_json["errors_explanations"]
 
         st.session_state[SESSION_CORRECT_SENTENCE] = correct
@@ -296,6 +299,9 @@ correct = st.session_state[SESSION_CORRECT_SENTENCE]
 explanation = st.session_state[SESSION_EXPLANATION]
 
 if correct and saved_user_input:
+    correct = remove_double_spaces(correct).strip()
+    saved_user_input = remove_double_spaces(saved_user_input).strip()
+
     correct_suffix = correct[-1]
     user_suffix    = saved_user_input[-1]
     if correct_suffix in SENTENCE_SUFFIX_LIST:
@@ -307,16 +313,22 @@ if correct and saved_user_input:
     diff = Redlines(saved_user_input, correct)
     correct_container.markdown(diff.output_markdown, unsafe_allow_html=True)
 
-    if len(explanation) > 0:
-        if lang_my_input.lower() != "english":
-            explanation_translated = '\n'.join([f'<li>{e[2]}</li>' for e in explanation])
-            explain_container.markdown(explanation_translated, unsafe_allow_html=True)
+    try:
+        if len(explanation) > 0:
+            if lang_my_input.lower() != "english":
+                #explanation_translated = '\n'.join([f'<li>{e[2]}</li>' for e in explanation])
+                explanation_translated = explanation[1]
+                explain_container.markdown(explanation_translated, unsafe_allow_html=True)
+            else:
+                #explanation_english = '\n'.join([f'<li>{e[1]}</li>' for e in explanation])
+                explanation_english = explanation[0]
+                explain_container.markdown(explanation_english, unsafe_allow_html=True)
         else:
-            explanation_english = '\n'.join([f'<li>{e[1]}</li>' for e in explanation])
-            explain_container.markdown(explanation_english, unsafe_allow_html=True)
-    else:
-        correct_message = '<p style="color:green;">Correct!</p>'
-        explain_container.markdown(correct_message, unsafe_allow_html=True)
+            correct_message = '<p style="color:green;">Correct!</p>'
+            explain_container.markdown(correct_message, unsafe_allow_html=True)
+    except Exception as error:
+        explain_container.markdown(f'Error: [{explanation}]\n{error}', unsafe_allow_html=True)
+
 else:
     correct_container.markdown('', unsafe_allow_html=True)
     explain_container.markdown('', unsafe_allow_html=True)
