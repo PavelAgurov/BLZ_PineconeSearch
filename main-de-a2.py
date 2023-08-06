@@ -119,8 +119,8 @@ if SESSION_EXPLANATION not in st.session_state:
 
 @st.cache_data
 def get_default_gpt_key():
-    return os.environ["OPENAI_API_KEY"] 
-
+    if "OPENAI_API_KEY" in os.environ:
+        return os.environ["OPENAI_API_KEY"]
 
 def on_check_button_click():
     input_str : str = st.session_state.user_input
