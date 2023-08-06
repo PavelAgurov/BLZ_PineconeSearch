@@ -15,7 +15,8 @@ from utils import streamlit_hack_disable_textarea_submit, streamlit_hack_remove_
 SENTENCE_SUFFIX_LIST = ['.', '!', '?']
 
 how_it_work = """\
-Enter your translation of proposed text, click Check and wait for Gpt validation and advice. 
+Enter your translation of proposed text, click Check and wait for Gpt validation and advice.
+Plese note - it's still POC.
 """
 
 generation_template = """/
@@ -95,8 +96,6 @@ Be sure that result is valid JSON.
 
 st.set_page_config(page_title="Gpt Language Trainer", layout="wide")
 st.title("Gpt Language Trainer")
-
-streamlit_hack_disable_textarea_submit()
 
 SESSION_SAVED_USER_INPUT = 'saved_user_input'
 SESSION_RUN_CHECK        = 'run_check'
@@ -182,6 +181,7 @@ with st.sidebar:
 
 header_container.markdown(how_it_work, unsafe_allow_html=True)
 streamlit_hack_remove_top_space()
+streamlit_hack_disable_textarea_submit()
 
 if not gpt_key_input:
     info_message = '<p style="color:white; background-color:red">Enter your Gpt key on Settings tab</p>'
@@ -315,7 +315,8 @@ if correct and saved_user_input:
             explanation_english = '\n'.join([f'<li>{e[1]}</li>' for e in explanation])
             explain_container.markdown(explanation_english, unsafe_allow_html=True)
     else:
-        explain_container.markdown("Correct!", unsafe_allow_html=True)
+        correct_message = '<p style="color:green;">Correct!</p>'
+        explain_container.markdown(correct_message, unsafe_allow_html=True)
 else:
     correct_container.markdown('', unsafe_allow_html=True)
     explain_container.markdown('', unsafe_allow_html=True)
