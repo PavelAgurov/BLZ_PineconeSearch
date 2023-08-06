@@ -12,8 +12,6 @@ from redlines import Redlines
 import datetime
 from utils import streamlit_hack_disable_textarea_submit, streamlit_hack_remove_top_space
 
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"] 
-
 SENTENCE_SUFFIX_LIST = ['.', '!', '?']
 
 how_it_work = """\
@@ -22,10 +20,10 @@ Enter your translation of proposed text, click Check and wait for Gpt validation
 
 generation_template = """/
 Hello! I learn {lang_learn}.
-{level}
 Make me a random sentence in {lang_my} for translation into {lang_learn} and translate all the words in it, 
 but not the sentence itself. All nouns must have an article (for example "der Ort", "das Essen").
 Use this {random} value for seed randomization and generate different sentences.
+{level_and_type}
 Provide answer in JSON format:
 {{
     "proposed_sentence" : "proposed sentence in {lang_my}",
@@ -120,6 +118,11 @@ if SESSION_CORRECT_SENTENCE not in st.session_state:
 if SESSION_EXPLANATION not in st.session_state:
     st.session_state[SESSION_EXPLANATION] = ""
 
+@st.cache_data
+def get_default_gpt_key():
+    return os.environ["OPENAI_API_KEY"] 
+
+
 def on_check_button_click():
     input_str : str = st.session_state.user_input
     input_str = input_str.strip()
@@ -143,9 +146,8 @@ to_lang_default_value = "German"
 if "to" in query_params:
     to_lang_default_value = query_params["to"][0].strip("\"")
 
-header_container   = st.container()
-
-tab_main, tab_debug = st.tabs(["Main", "Debug"])
+header_container = st.container()
+tab_main, tb_settings, tab_debug = st.tabs(["Main", "Settings", "Debug"])
 
 with tab_main:
     status_container   = st.empty()
@@ -161,19 +163,37 @@ with tab_main:
     with col2:
         next_button  = st.button(label= "Next" , on_click= on_next_button_click , key="next_button" )
 
+with tb_settings:
+    gpt_key_input    = st.text_input("Your Gpt key: ",  value = get_default_gpt_key(), type='password')
+    gpt_key_info     = st.info("Your key is only used in your browser. If you refresh the page - enter the key again.")
+    lang_my_input    = st.text_input("I speak: ",  value = from_lang_default_value)
+    lang_learn_input = st.text_input("I learn: ", value = to_lang_default_value)
+    level_input      = st.selectbox("Level:", key="slevel", options=["Simple", "Medium", "Advanced"], index=1)
+
 with tab_debug:
     init_json_container     = st.expander(label="JSON init")
     validate_json_container = st.expander(label="JSON validation")
 
 with st.sidebar:
-    lang_my_input   = st.text_input("I speak: ",  value = from_lang_default_value)
-    lang_learn_input = st.text_input("I learn: ", value = to_lang_default_value)
-    level_intput    = st.selectbox("Level:", key="level", options=["A1", "A2", "B1", "B2", "B2+"], index=1)
+    info_container  = st.container()
+    type_input      = st.selectbox("Sentence type:", key="stype", options=["Statement", "Questions"], index=1)
     words_container = st.expander(label="Help me with words")
     error_container = st.empty()
 
 header_container.markdown(how_it_work, unsafe_allow_html=True)
 streamlit_hack_remove_top_space()
+
+if not gpt_key_input:
+    info_message = '<p style="color:white; background-color:red">Enter your Gpt key on Settings tab</p>'
+    info_container.markdown(info_message, unsafe_allow_html=True)
+
+def get_level_and_type(level, atype):
+    if level == "Simple":
+        return f"Sentence should be very simple - noun, verb and adjective and be {atype}."
+    elif level == "Medium":
+        return f"Sentence should have medium complexity and have maximum 10 words and be {atype}."
+    elif level == "Advanced":
+        return f"Sentence should be complex and have minumum 20 words and subordinate clause and be {atype}."
 
 def get_fixed_json(text : str) -> str:
     text = text.replace(", ]", "]").replace(",]", "]").replace(",\n]", "]")
@@ -186,16 +206,18 @@ def get_fixed_json(text : str) -> str:
         return text
     return text[open_bracket:close_bracket+1]
 
+if not gpt_key_input:
+    st.stop()
 
 langchain.llm_cache = SQLiteCache()
 llm_random = ChatOpenAI(
-        openai_api_key= OPENAI_API_KEY,
+        openai_api_key= gpt_key_input,
         model_name  = "gpt-3.5-turbo", 
         temperature = 0.9, 
         max_tokens  = 1000
 )
 llm_fixed = ChatOpenAI(
-        openai_api_key= OPENAI_API_KEY,
+        openai_api_key= gpt_key_input,
         model_name  = "gpt-3.5-turbo", 
         temperature = 0, 
         max_tokens  = 1000
@@ -215,7 +237,7 @@ generated_sentence = st.session_state[SESSION_SAVED_SENTENCE]
 if not generated_sentence and not run_check:
     status_container.markdown('Generate sentence...')
     generated_sentence_result = generation_chain.invoke({
-            "level" : level_intput, 
+            "level_and_type" : get_level_and_type(level_input, type_input), 
             "lang_learn" : lang_learn_input,
             "lang_my": lang_my_input,
             "random" : now_str
